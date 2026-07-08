@@ -79,7 +79,7 @@ class Task:
         """Return 'complete' or 'pending' based on the task's completion state."""
         return "complete" if self._complete else "pending"
 
-
+# ADD: case for testing
 @dataclass
 class Pet:
     pet_id: str
@@ -115,7 +115,7 @@ class Schedule:
     def view_schedule(self) -> List[Task]:
         """Return the schedule's tasks in their original (unsorted) order."""
         return list(self.tasks)
-
+    # ADD: case for testing
     def sort_by_time(self, tasks: Optional[List[Task]] = None) -> List[Task]:
         """Return the given tasks (or self.tasks) sorted by start time."""
         return sorted(tasks if tasks is not None else self.tasks, key=lambda task: task.start_time)
@@ -273,7 +273,7 @@ class User:
             )
             self.schedules.append(schedule)
         return schedule
-
+    # ADD: case for testing
     def complete_task(self, task_id: str) -> Optional[Task]:
         """Mark task_id complete and file its auto-generated next occurrence, if recurring."""
         for schedule in self.schedules:

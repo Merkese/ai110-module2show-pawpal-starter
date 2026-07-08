@@ -82,7 +82,7 @@ tests\test_pawpal.py ..............                                             
 
 **Confidence in system reliability: ⭐⭐⭐⭐☆ (4/5)**
 
-All 14 tests pass, and the core scheduling contract — chronological sorting, daily/weekly recurrence, and overlap conflict detection — is verified, including tie-break and boundary cases. Not a full 5 stars because coverage doesn't yet include known risk areas: time strings that aren't zero-padded or that wrap past midnight (e.g., a task ending at `"00:20"`), invalid time input crashing the Streamlit form, and `task_id` collisions after removing and re-adding tasks. Those would need targeted tests before calling the scheduler fully reliable.
+All 14 tests pass, and the core scheduling contract — chronological sorting, daily/weekly recurrence, and overlap conflict detection — is verified, including tie-break and boundary cases. Not a full 5 stars because coverage doesn't yet include other risk areas: time strings that aren't all zeros or past midnight, invalid time input crashing the Streamlit form, and task_id collisions after removing and re-adding tasks.
 
 ## 📐 Smarter Scheduling
 

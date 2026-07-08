@@ -77,26 +77,34 @@ Classes: User, Pet, Task, Schedule
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+    - I did it for each described as it was a big help for all of them, especially refactoring.
 - What kinds of prompts or questions were most helpful?
+    - Ask it to offer suggestions and prompts where I needed it to plan out specifics of the project.
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+    - I did not accept all suggestion when it came to updating the algorithms after asking for suggestions. Some were too complex to understand from my current understanding.
 - How did you evaluate or verify what the AI suggested?
+    - I made sure to run streamlit before and after and surprisingly noticed changes with the speed.
 
 ---
 
 ## 4. Testing and Verification
 
-**a. What you tested**
 
 - What behaviors did you test?
 - Why were these tests important?
 
-**b. Confidence**
+- I tested that tasks sort correctly by time (including two tasks at the same start time), that marking a daily or weekly task complete generates the right next occurrence, and that overlapping tasks get flagged as conflicts while back to back tasks don't.
+- These tests mattered most because sorting, recurrence, and conflict detection are the parts of the scheduler with the trickiest logic, so they're the most likely places a small mistake would silently give the user a wrong plan.
 
+**b. Confidence**
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
+
+- I'd give myself about a 4 out of 5 stars of confidence since all 14 of my tests pass and cover the main scheduling behaviors, but I know there are gaps I haven't checked yet.
+
 
 ---
 

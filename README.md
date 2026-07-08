@@ -30,6 +30,7 @@ Your final app should:
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+streamlit run app.py
 ```
 
 ### Suggested workflow
@@ -77,10 +78,10 @@ Sample test output:
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting |Schedule.sort_by_time(), Schedule.generate_daily_plan() | e.g., by priority, duration |
+| Filtering | Schedule.filter_tasks(pet_id, status) *Pets and Status* | e.g., skip tasks if time runs out |
+| Conflict handling |Schedule._times_overlap(), Schedule.find_conflicts(candidate)  | e.g., overlapping time slots |
+| Recurring tasks |schedule_recurring_task() | e.g., daily vs. weekly |
 
 ## 📸 Demo Walkthrough
 

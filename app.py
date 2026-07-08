@@ -6,6 +6,16 @@ st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
 st.title("🐾 PawPal+")
 
+
+def remove_task_everywhere(user: User, schedule: Schedule, task_id: str) -> None:
+    """Remove a task from its schedule and from the owning pet's task list."""
+    task = next((t for t in schedule.tasks if t.task_id == task_id), None)
+    schedule.remove_task(task_id)
+    if task is not None:
+        pet = next((p for p in user.pets if p.pet_id == task.pet_id), None)
+        if pet is not None:
+            pet.tasks = [t for t in pet.tasks if t.task_id != task_id]
+
 st.markdown(
     """
 Welcome to the PawPal+ starter app.
@@ -141,13 +151,37 @@ else:
         conflict_warnings = schedule.find_conflicts(candidate=task)
         schedule.add_task(task)
         pet.tasks.append(task)  # keep Pet.tasks in sync, same as schedule_pet_walk does
-        for warning in conflict_warnings:
-            st.warning(warning)
+        if conflict_warnings:
+            for warning in conflict_warnings:
+                st.warning(warning)
+        else:
+            st.success(f"'{task_title}' added to today's schedule.")
 
     today = date.today().isoformat()
     todays_schedule = next((s for s in user.schedules if s.schedule_date == today), None)
     if todays_schedule and todays_schedule.tasks:
         st.write("Today's tasks:")
+
+        conflict_pairs = todays_schedule.find_conflict_pairs()
+        if conflict_pairs:
+            st.error(f"⚠️ {len(conflict_pairs)} scheduling conflict(s) found today. Resolve by removing one of the overlapping tasks:")
+            for i, (t1, t2) in enumerate(conflict_pairs):
+                with st.container(border=True):
+                    st.warning(
+                        f"'{t1.task_description}' ({t1.start_time}-{t1.end_time}) overlaps with "
+                        f"'{t2.task_description}' ({t2.start_time}-{t2.end_time})"
+                    )
+                    rc1, rc2 = st.columns(2)
+                    with rc1:
+                        if st.button(f"Remove '{t1.task_description}'", key=f"remove_{t1.task_id}_{i}"):
+                            remove_task_everywhere(user, todays_schedule, t1.task_id)
+                            st.rerun()
+                    with rc2:
+                        if st.button(f"Remove '{t2.task_description}'", key=f"remove_{t2.task_id}_{i}"):
+                            remove_task_everywhere(user, todays_schedule, t2.task_id)
+                            st.rerun()
+        else:
+            st.success("No scheduling conflicts today.")
 
         col_f1, col_f2, col_f3 = st.columns(3)
         with col_f1:
@@ -233,7 +267,10 @@ else:
     with col_r4:
         recur_priority = st.selectbox("Priority", ["low", "medium", "high"], index=1, key="recur_priority")
     with col_r5:
-        recur_start_time = st.text_input("Start time (HH:MM)", value="08:00", key="recur_start_time")
+        # time_input forces a valid HH:MM selection instead of free-text entry.
+        recur_start_time_value = st.time_input(
+            "Start time", value=datetime.strptime("08:00", "%H:%M").time(), key="recur_start_time"
+        )
     with col_r6:
         recur_start_date = st.date_input("Start date", value=date.today(), key="recur_start_date")
     with col_r7:
@@ -250,7 +287,7 @@ else:
             description=recur_title,
             duration=int(recur_duration),
             priority=Priority(recur_priority),
-            start_time=recur_start_time,
+            start_time=recur_start_time_value.strftime("%H:%M"),
             start_date=recur_start_date.isoformat(),
             days=int(recur_days),
             frequency=recur_frequency,
@@ -258,6 +295,43 @@ else:
         st.success(f"Created {len(created_tasks)} occurrence(s) of '{recur_title}'.")
         for warning in conflict_warnings:
             st.warning(warning)
+
+    # Derived from the actual schedules/tasks (not the button click above), so this
+    # list persists across reruns and reflects removals immediately.
+    recurring_series: dict = {}
+    for schedule in user.schedules:
+        for t in schedule.tasks:
+            if t.recurrence != "none":
+                key = (t.pet_id, t.task_description, t.recurrence, t.start_time, t.end_time)
+                recurring_series.setdefault(key, []).append((schedule, t))
+
+    if recurring_series:
+        st.write("Recurring task series:")
+        for (pet_id, description, recurrence, start_time, end_time), occurrences in recurring_series.items():
+            pet = next((p for p in user.pets if p.pet_id == pet_id), None)
+            pet_label = pet.name if pet else pet_id
+            with st.container(border=True):
+                st.write(
+                    f"**{description}** for {pet_label} — {recurrence}, {start_time}-{end_time} "
+                    f"({len(occurrences)} occurrence(s))"
+                )
+                with st.expander("View / remove individual occurrences"):
+                    for occ_schedule, occ_task in sorted(occurrences, key=lambda pair: pair[1].due_date):
+                        occ_col1, occ_col2 = st.columns([3, 1])
+                        with occ_col1:
+                            st.write(
+                                f"{occ_task.due_date}: {occ_task.start_time}-{occ_task.end_time} "
+                                f"({occ_task.get_status()})"
+                            )
+                        with occ_col2:
+                            if st.button("Remove", key=f"remove_occ_{occ_task.task_id}"):
+                                remove_task_everywhere(user, occ_schedule, occ_task.task_id)
+                                st.rerun()
+                series_key = f"remove_series_{pet_id}_{description}_{recurrence}_{start_time}_{end_time}"
+                if st.button(f"Remove all occurrences of '{description}'", key=series_key):
+                    for occ_schedule, occ_task in occurrences:
+                        remove_task_everywhere(user, occ_schedule, occ_task.task_id)
+                    st.rerun()
 
 st.divider()
 
@@ -271,6 +345,23 @@ if st.button("Generate schedule"):
     if todays_schedule is None:
         st.info("No schedule for today yet. Add a task above first.")
     else:
-        # explain_plan() is the single source of truth for ordering/explaining
+        # generate_daily_plan() is the single source of truth for ordering
         # the plan (priority first, then start time) — no duplicate logic here.
-        st.text(todays_schedule.explain_plan())
+        plan = todays_schedule.generate_daily_plan()
+        if not plan:
+            st.info(f"No pending tasks scheduled for {todays_schedule.schedule_date}.")
+        else:
+            st.success(f"Daily plan for {todays_schedule.schedule_date}: {len(plan)} task(s), ordered by priority then start time.")
+            st.table(
+                [
+                    {
+                        "priority": t.task_priority.value,
+                        "title": t.task_description,
+                        "start": t.start_time,
+                        "end": t.end_time,
+                        "duration (min)": t.task_duration,
+                        "pet_id": t.pet_id,
+                    }
+                    for t in plan
+                ]
+            )

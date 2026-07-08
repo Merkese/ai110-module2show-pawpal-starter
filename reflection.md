@@ -67,6 +67,7 @@ Classes: User, Pet, Task, Schedule
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+    - The schedule class only checks for time in HH:MM instead of durations
 - Why is that tradeoff reasonable for this scenario?
 
 ---

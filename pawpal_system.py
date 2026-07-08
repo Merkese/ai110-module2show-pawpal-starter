@@ -162,6 +162,15 @@ class Schedule:
                     )
         return warnings
 
+    def find_conflict_pairs(self) -> List[tuple[Task, Task]]:
+        """Return (task1, task2) pairs among self.tasks whose times overlap."""
+        pairs: List[tuple[Task, Task]] = []
+        for i, t1 in enumerate(self.tasks):
+            for t2 in self.tasks[i + 1:]:
+                if self._times_overlap(t1.start_time, t1.end_time, t2.start_time, t2.end_time):
+                    pairs.append((t1, t2))
+        return pairs
+
     def generate_daily_plan(self) -> List[Task]:
         """Return incomplete tasks sorted by priority then start time."""
         priority_order = {Priority.HIGH: 0, Priority.MEDIUM: 1, Priority.LOW: 2}

@@ -1,0 +1,73 @@
+classDiagram
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class User {
+        +String userID
+        +String name
+        +String email
+        +String phoneNumber
+        +String address
+        +List~Pet~ pets
+        +List~Schedule~ schedules
+        +addPet(pet) void
+        +schedulePetWalk(pet, date) Schedule
+        +trackAppointments() List~Task~
+        +getTodayTasks() List~Task~
+        +completeTask(taskID) Optional~Task~
+        +scheduleRecurringTask(pet, description, duration, priority, startTime, startDate, days, frequency) tuple
+        -findOrCreateSchedule(scheduleDate) Schedule
+    }
+
+    class Pet {
+        +String petID
+        +String animalType
+        +String name
+        +String ownerID
+        +List~Task~ tasks
+        +getPetDetails() String
+        +getUpcomingTasks() List~Task~
+    }
+
+    class Task {
+        +String taskID
+        +String taskDescription
+        +int taskDuration
+        +Priority taskPriority
+        +String petID
+        +String startTime
+        +String endTime
+        +String recurrence
+        +String dueDate
+        -bool complete
+        +create(taskID, taskDescription, taskDuration, taskPriority, petID, startTime, endTime, recurrence, dueDate) Task
+        +updatePriority(priority) void
+        +markComplete() Optional~Task~
+        +getStatus() String
+    }
+
+    class Schedule {
+        +String scheduleID
+        +String scheduleDate
+        +String ownerID
+        +List~Task~ tasks
+        +addTask(task) void
+        +removeTask(taskID) void
+        +viewSchedule() List~Task~
+        +sortByTime(tasks) List~Task~
+        +filterTasks(petID, status) List~Task~
+        +findConflicts(candidate) List~String~
+        +findConflictPairs() List~tuple~
+        +generateDailyPlan() List~Task~
+        +explainPlan() String
+    }
+
+    User "1" --> "0..*" Pet : owns
+    User "1" --> "0..*" Schedule : has
+    Pet "1" --> "0..*" Task : has
+    Schedule "1" --> "0..*" Task : contains
+    Task ..> Priority : uses
